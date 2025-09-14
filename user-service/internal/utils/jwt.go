@@ -1,4 +1,4 @@
-package utlis
+package utils
 
 import (
 	"errors"
@@ -74,4 +74,23 @@ func (j *JWTManager) ValidateToken(tokenString string) (*JWTClaims, error) {
 	}
 
 	return nil, errors.New("invalid token")
+}
+
+func (j *JWTManager) ValidateRefreshToken(tokenString string) (*jwt.RegisteredClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(j.secretKey), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid refresh token")
 }
